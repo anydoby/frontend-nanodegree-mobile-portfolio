@@ -422,13 +422,14 @@ var resizePizzas = function(size) {
   changeSliderLabel(size);
 
   // Returns the size difference to change a pizza element from one size to another. Called by changePizzaSlices(size).
-  function determineDx (elem, size) {
-    var oldwidth = elem.offsetWidth;
-    var windowwidth = document.querySelector("#randomPizzas").offsetWidth;
+  function determineDx (oldwidth, windowwidth, newsize) {
     var oldsize = oldwidth / windowwidth;
+    var dx = (newsize - oldsize) * windowwidth;
+    return dx;
+  }
 
-    // TODO: change to 3 sizes? no more xl?
-    // Changes the slider value to a percent width
+  // Iterates through pizza elements on the page and changes their widths
+  function changePizzaSizes(size) {
     function sizeSwitcher (size) {
       switch(size) {
         case "1":
@@ -441,19 +442,18 @@ var resizePizzas = function(size) {
           console.log("bug in sizeSwitcher");
       }
     }
-
     var newsize = sizeSwitcher(size);
-    var dx = (newsize - oldsize) * windowwidth;
-
-    return dx;
-  }
-
-  // Iterates through pizza elements on the page and changes their widths
-  function changePizzaSizes(size) {
-    for (var i = 0; i < document.querySelectorAll(".randomPizzaContainer").length; i++) {
-      var dx = determineDx(document.querySelectorAll(".randomPizzaContainer")[i], size);
-      var newwidth = (document.querySelectorAll(".randomPizzaContainer")[i].offsetWidth + dx) + 'px';
-      document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth;
+    var pizzas = document.querySelectorAll(".randomPizzaContainer");
+    var windowWidth = document.querySelector("#randomPizzas").offsetWidth;
+    var offsets = [];
+    for (var i = 0; i < pizzas.length; i++) {
+       offsets.push(pizzas[i].offsetWidth);
+    } 
+    for (var i = 0; i < pizzas.length; i++) {
+      var offset = offsets[i];
+      var dx = determineDx(offset, windowWidth, newsize);
+      var newwidth = (offset + dx) + 'px';
+      pizzas[i].style.width = newwidth;
     }
   }
 
@@ -503,8 +503,9 @@ function updatePositions() {
   window.performance.mark("mark_start_frame");
 
   var items = document.querySelectorAll('.mover');
+  var top = document.body.scrollTop/1250;
   for (var i = 0; i < items.length; i++) {
-    var phase = Math.sin((document.body.scrollTop / 1250) + (i % 5));
+    var phase = Math.sin((top) + (i % 5));
     items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
   }
 
