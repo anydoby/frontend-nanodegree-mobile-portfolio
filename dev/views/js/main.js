@@ -430,6 +430,7 @@ var resizePizzas = function(size) {
 
   // Iterates through pizza elements on the page and changes their widths
   function changePizzaSizes(size) {
+    // no need to create a function for all 200 pizzas
     function sizeSwitcher (size) {
       switch(size) {
         case "1":
@@ -443,12 +444,16 @@ var resizePizzas = function(size) {
       }
     }
     var newsize = sizeSwitcher(size);
+    // select container just once
     var pizzas = document.querySelectorAll(".randomPizzaContainer");
+    // get the window width just once
     var windowWidth = document.querySelector("#randomPizzas").offsetWidth;
+    // get the offsets before modifying anything to avoid costly recalculation
     var offsets = [];
     for (var i = 0; i < pizzas.length; i++) {
        offsets.push(pizzas[i].offsetWidth);
     } 
+    // bulk change the styles before rendering
     for (var i = 0; i < pizzas.length; i++) {
       var offset = offsets[i];
       var dx = determineDx(offset, windowWidth, newsize);
@@ -503,6 +508,7 @@ function updatePositions() {
   window.performance.mark("mark_start_frame");
 
   var items = document.querySelectorAll('.mover');
+  // no need to constantly query scrollTop in a loop
   var top = document.body.scrollTop/1250;
   for (var i = 0; i < items.length; i++) {
     var phase = Math.sin((top) + (i % 5));
