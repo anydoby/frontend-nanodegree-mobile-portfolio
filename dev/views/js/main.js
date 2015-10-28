@@ -474,8 +474,8 @@ var resizePizzas = function(size) {
 window.performance.mark("mark_start_generating"); // collect timing data
 
 // This for-loop actually creates and appends all of the pizzas when the page loads
+var pizzasDiv = document.getElementById("randomPizzas");
 for (var i = 2; i < 100; i++) {
-  var pizzasDiv = document.getElementById("randomPizzas");
   pizzasDiv.appendChild(pizzaElementGenerator(i));
 }
 
@@ -502,17 +502,25 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
 // The following code for sliding background pizzas was pulled from Ilya's demo found at:
 // https://www.igvita.com/slides/2012/devtools-tips-and-tricks/jank-demo.html
 
+
 // Moves the sliding background pizzas based on scroll position
 function updatePositions() {
   frame++;
   window.performance.mark("mark_start_frame");
 
-  var items = document.querySelectorAll('.mover');
   // no need to constantly query scrollTop in a loop
   var top = document.body.scrollTop/1250;
-  for (var i = 0; i < items.length; i++) {
-    var phase = Math.sin((top) + (i % 5));
-    items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
+  // cache phases
+  var phases = [];
+  for (var i = 0; i < 6; i++) {
+    phases.push(Math.sin((top) + (i % 5)));
+  }
+
+  for (var i = 0; i < movables.length; i++) {
+    var phase = phases[i%5]; 
+    var item = movables[i];
+    // apply transform to avoid layout recalculation so that only compositor works
+    item.style.transform = 'translate(' + phase * 100 + "px,0px)";
   }
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
@@ -527,20 +535,39 @@ function updatePositions() {
 
 // runs updatePositions on scroll
 window.addEventListener('scroll', updatePositions);
+window.addEventListener('resize', initPizzas);
 
 // Generates the sliding pizzas when the page loads.
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', initPizzas);
+
+function initPizzas() {
   var cols = 8;
   var s = 256;
-  for (var i = 0; i < 200; i++) {
+  function top(i){
+    return (Math.floor(i / cols) * s)
+  }
+  var pizzas = document.getElementById("movingPizzas1");
+  pizzas.innerHTML = '';
+  var windowHeight = document.documentElement.clientHeight;
+  var windowWidth = document.documentElement.clientWidth;
+  console.log("Generating pizzas for viewport height: " + windowHeight);
+  for (var i = 0, t = 0; (t = top(i)) < windowHeight; i++) {
+    var x = (i % cols) * s;
+    if (x + s > windowWidth) {
+      continue;
+    }
     var elem = document.createElement('img');
     elem.className = 'mover';
     elem.src = "images/pizza.png";
     elem.style.height = "100px";
     elem.style.width = "73.333px";
-    elem.basicLeft = (i % cols) * s;
-    elem.style.top = (Math.floor(i / cols) * s) + 'px';
-    document.querySelector("#movingPizzas1").appendChild(elem);
+    elem.style.left = x + "px";
+    elem.style.top = t + 'px';
+    elem.baseLeft = x;
+    pizzas.appendChild(elem);
   }
+  // we do not want to create a copy of all pizzas every time on scroll
+  // so just cache it here
+  movables = document.querySelectorAll('.mover');
   updatePositions();
-});
+}
